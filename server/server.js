@@ -7,10 +7,22 @@ import { renderToStaticNodeStream } from 'react-dom/server'
 import React from 'react'
 
 import cookieParser from 'cookie-parser'
+import axios from 'axios'
 import config from './config'
 import Html from '../client/html'
 
+const { readFile, writeFile, unlink } = require("fs").promises; 
+
+const setHeaders = (req, res, next) => {
+  res.set({
+    'x-skillcrucial-user': '63517faa-0b25-418b-95ae-16e8baa89119',  
+    'Access-Control-Expose-Headers': 'X-SKILLCRUCIAL-USER'
+  })
+    next() 
+}
+
 const Root = () => ''
+
 
 try {
   // eslint-disable-next-line import/no-unresolved
@@ -36,10 +48,77 @@ const middleware = [
   express.static(path.resolve(__dirname, '../dist/assets')),
   bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }),
   bodyParser.json({ limit: '50mb', extended: true }),
-  cookieParser()
+  cookieParser(),
+  setHeaders
 ]
 
 middleware.forEach((it) => server.use(it))
+
+server.get('/api/v1/users', (req, res) => {
+  readFile(`${__dirname}/users.json`, { encoding: "utf8" })  
+      .then((users) => {  
+        res.send(users)
+      })  
+      .catch(async () => {  
+        const users = await axios('https://jsonplaceholder.typicode.com/users')  
+      .then(({data}) => data) 
+      writeFile(`${__dirname}/users.json`, JSON.stringify(users), { encoding: "utf8" });  
+    res.send(users)
+    })  
+})
+
+server.post('/api/v1/users', (req, res) => {
+ const { body } = req
+  readFile(`${__dirname}/users.json`, { encoding: "utf8" })  
+    .then((data) => {  
+      const users = JSON.parse(data)
+      const lastUserId = users[users.length -1].id
+      const newUser = {
+        id : lastUserId + 1,
+        ...body
+      }
+      const newUsers = [...users, newUser]
+       writeFile(`${__dirname}/users.json`, JSON.stringify(newUsers), { encoding: "utf8" });
+       res.send({ status: 'success', id: newUser.id})
+      })  
+})
+
+server.patch('/api/v1/users/:userId', (req, res) => {
+  const { body } = req
+  readFile(`${__dirname}/users.json`, { encoding: "utf8" })  
+  .then((data) => { 
+    const users = JSON.parse(data)
+    const id = +req.params.userId
+  const newUsers = users.map((user) => {
+    if (user.id === id) {
+       return {
+      ...user,
+      ...body
+       }
+    }
+  return user
+   })
+   writeFile(`${__dirname}/users.json`, JSON.stringify(newUsers), { encoding: "utf8" });
+   res.send({ status: 'success', id })
+  })
+})
+
+server.delete('/api/v1/users/:userId', (req, res) => {
+  readFile(`${__dirname}/users.json`, { encoding: "utf8" })  
+  .then((data) => { 
+    const users = JSON.parse(data)
+    const id = +req.params.userId
+  const newUsers = users.filter((user) => user.id !== id)
+   writeFile(`${__dirname}/users.json`, JSON.stringify(newUsers), { encoding: "utf8" })
+   res.send({ status: 'success', id })
+  })
+})
+
+server.delete('/api/v1/users', (req, res) => {
+  unlink(`${__dirname}/users.json`, { encoding: "utf8" })  
+  res.send({ status: 'success' })
+})
+
 
 server.use('/api/', (req, res) => {
   res.status(404)
