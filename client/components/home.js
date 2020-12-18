@@ -1,22 +1,19 @@
-import React, { useState } from 'react'
-import Head from './head'
-// import wave from '../assets/images/wave.jpg'
+import React from 'react'
+import Header from './header'
 
 const Home = () => {
-  const [counter, setCounterNew] = useState(0)
-
   return (
     <div>
-      <Head title="Hello" />
-      <img alt="wave" src="images/wave.jpg" />
-      <button type="button" onClick={() => setCounterNew(counter + 1)}>
-        updateCounter
-      </button>
-      <div> Hello World Dashboard {counter} </div>
+      <Header />
+      <div className="flex bg-indigo-800 items-center justify-between flex-wrap p-6">
+        <div className="text-white font-bold flex flex-shrink-0 mr-6">
+      {}
+      </div>
+     </div>
     </div>
   )
 }
 
 Home.propTypes = {}
 
-export default Home
+export default React.memo(Home)
