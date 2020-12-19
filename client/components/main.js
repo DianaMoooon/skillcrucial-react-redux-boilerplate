@@ -13,6 +13,7 @@ const onClick = () => {
   return (
       <div className="flex items-center justify-center h=screen">
       <div className="bg-indigo-800 text-black font-bold rounded-lg border shadow-lg p-10">
+      <div id="title">Main</div>
         <input id="input-field" type="text" 
         value={value} 
         onChange={onChange}
